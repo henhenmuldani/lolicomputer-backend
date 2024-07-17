@@ -11,6 +11,9 @@ COPY . .
 # Install app dependencies
 RUN bun install
 
+# Copy the Prisma schema and migration files if any
+COPY prisma ./prisma
+
 # Generate Prisma
 RUN bun x prisma generate
 
