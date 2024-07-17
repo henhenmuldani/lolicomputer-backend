@@ -10,6 +10,7 @@ app.get("/", (c) => {
   return c.json({
     message: "This is lolicomputer's API",
     products: "/products",
+    users: "/users",
   });
 });
 
