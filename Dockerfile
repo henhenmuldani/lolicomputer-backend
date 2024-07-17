@@ -15,7 +15,7 @@ RUN bun install
 RUN bun db:generate
 
 # Migrate the database
-RUN bun db:migrate:dev --name add-slug-to-product
+RUN bun db:migrate:deploy
 
 # Local development
 EXPOSE 3000
