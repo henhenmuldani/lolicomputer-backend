@@ -12,13 +12,13 @@ COPY . .
 RUN bun install
 
 # Generate Prisma
-RUN bun db:generate
+RUN bun x prisma generate
 
 # Migrate the database
-RUN bun db:migrate:deploy
+RUN bun x prisma migrate deploy
 
 # Local development
-EXPOSE 3000
+# EXPOSE 3000
 
 # Run the application
 CMD ["bun", "start"]
