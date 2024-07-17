@@ -12,10 +12,10 @@ COPY . .
 RUN bun install
 
 # Install Prisma
-RUN bun i -g prisma
+# RUN bun i -g prisma
 
 # Copy the Prisma schema and migration files if any
-COPY prisma ./prisma
+# COPY prisma ./prisma
 
 # Generate Prisma
 RUN bun x prisma generate
