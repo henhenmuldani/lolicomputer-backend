@@ -19,6 +19,12 @@ app.get("/products", async (c) => {
   return c.json(products);
 });
 
+app.get("/users", async (c) => {
+  const users = await prisma.user.findMany();
+
+  return c.json(users);
+});
+
 // app.post("/products/seed", async (c) => {
 //   await prisma.product.createMany({
 //     data: [
