@@ -11,8 +11,14 @@ COPY . .
 # Install app dependencies
 RUN bun install
 
+# Generate Prisma
+RUN bun db:generate
+
+# Migrate the database
+RUN bun db:migrate:dev --name add-slug-to-product
+
 # Local development
-# EXPOSE 3000
+EXPOSE 3000
 
 # Run the application
 CMD ["bun", "start"]

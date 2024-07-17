@@ -1,7 +1,10 @@
 import { Hono } from "hono";
 import { prisma } from "./libs/prisma.js";
+import { cors } from "hono/cors";
 
 const app = new Hono();
+
+app.use("/*", cors());
 
 app.get("/", (c) => {
   return c.json({

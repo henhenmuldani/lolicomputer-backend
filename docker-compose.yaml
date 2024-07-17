@@ -7,6 +7,7 @@ services:
   #     - "3000:3000"
   #   depends_on:
   #     - database
+
   database:
     image: postgres:alpine
     ports:
@@ -16,3 +17,6 @@ services:
     env_file:
       - path: .env
         required: true
+
+volumes:
+  pgdata:
