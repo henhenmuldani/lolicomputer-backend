@@ -1,8 +1,25 @@
 import { Hono } from "hono";
 import { prisma } from "./libs/prisma.js";
 import { cors } from "hono/cors";
+import { zValidator } from "@hono/zod-validator";
+import { z } from "zod";
+import { hashPassword, verifyPassword } from "./libs/password.js";
+import { createToken } from "./libs/jwt.js";
+import { checkUserToken } from "./middlewares/check-user-token.js";
 
-const app = new Hono();
+type Bindings = {
+  TOKEN: string;
+};
+
+type Variables = {
+  user: {
+    id: string;
+  };
+};
+
+export type HonoApp = { Bindings: Bindings; Variables: Variables };
+
+const app = new Hono<HonoApp>();
 
 app.use("/*", cors());
 
@@ -11,6 +28,7 @@ app.get("/", (c) => {
     message: "This is lolicomputer's API",
     products: "/products",
     users: "/users",
+    auth: "/auth",
   });
 });
 
@@ -20,22 +38,158 @@ app.get("/products", async (c) => {
   return c.json(products);
 });
 
-app.get("/products/:slug", async (c) => {
-  const slug = c.req.param("slug");
+app.get(
+  "/products/:slug",
+  zValidator("param", z.object({ slug: z.string() })),
+  async (c) => {
+    const { slug } = c.req.valid("param");
 
-  const product = await prisma.product.findUnique({
-    where: {
-      slug: slug,
+    const product = await prisma.product.findUnique({
+      where: {
+        slug: slug,
+      },
+    });
+
+    return c.json(product);
+  }
+);
+
+app.get("/users", async (c) => {
+  const users = await prisma.user.findMany({
+    select: {
+      id: true,
+      username: true,
     },
   });
 
-  return c.json(product);
+  return c.json(users);
 });
 
-app.get("/users", async (c) => {
-  const users = await prisma.user.findMany();
+app.get(
+  "/users/:username",
+  zValidator("param", z.object({ username: z.string() })),
+  async (c) => {
+    const { username } = c.req.valid("param");
 
-  return c.json(users);
+    const user = await prisma.user.findUnique({
+      where: {
+        username: username,
+      },
+      select: {
+        id: true,
+        username: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!user) {
+      return c.json({ message: "User not found" }, 404);
+    }
+
+    return c.json(user);
+  }
+);
+
+app.post(
+  "/auth/register",
+  zValidator(
+    "json",
+    z.object({
+      username: z.string(),
+      email: z.string(),
+      password: z.string(),
+    })
+  ),
+  async (c) => {
+    const body = c.req.valid("json");
+
+    try {
+      const newUser = await prisma.user.create({
+        data: {
+          username: body.username,
+          email: body.email,
+          password: {
+            create: {
+              hash: await hashPassword(body.password),
+            },
+          },
+        },
+      });
+
+      return c.json({
+        message: "Register new user successful",
+        newUser: {
+          username: newUser.username,
+        },
+      });
+    } catch (error) {
+      return c.json({ message: "Cannot register user" }, 400);
+    }
+  }
+);
+
+app.post(
+  "/auth/login",
+  zValidator(
+    "json",
+    z.object({
+      email: z.string(),
+      password: z.string(),
+    })
+  ),
+  async (c) => {
+    const body = c.req.valid("json");
+
+    const foundUser = await prisma.user.findUnique({
+      where: { email: body.email },
+      include: { password: { select: { hash: true } } },
+    });
+
+    if (!foundUser) {
+      return c.json({ message: "User not found" }, 404);
+    }
+
+    if (!foundUser?.password?.hash) {
+      c.status(400);
+      return c.json({
+        message: "Cannot login because user doesn't have a password",
+      });
+    }
+
+    const validPassword = await verifyPassword(
+      foundUser.password.hash,
+      body.password
+    );
+
+    if (!validPassword) {
+      return c.json({ message: "Invalid password" }, 400);
+    }
+
+    const token = await createToken(foundUser.id);
+
+    if (!token) {
+      return c.json({ message: "Cannot create token" }, 400);
+    }
+
+    return c.json({
+      message: "Login successful",
+      token,
+    });
+  }
+);
+
+app.get("/auth/profile", checkUserToken(), async (c) => {
+  const user = c.get("user");
+
+  const userData = await prisma.user.findUnique({
+    where: { id: user.id },
+  });
+
+  return c.json({
+    message: "User data",
+    user: userData,
+  });
 });
 
 // app.post("/products/seed", async (c) => {
