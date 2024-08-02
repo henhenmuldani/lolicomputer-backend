@@ -5,8 +5,9 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-1.1.x"]
+  provider        = "prisma-client-js"
+  previewFeatures = ["omitApi"]
+  binaryTargets   = ["native", "debian-openssl-1.1.x"]
 }
 
 datasource db {
@@ -15,14 +16,17 @@ datasource db {
 }
 
 model Product {
-  id          String   @id @default(cuid())
+  id          String @id @default(cuid())
   name        String
-  slug        String   @unique
+  slug        String @unique
   description String
   imageUrl    String
   price       Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  cartItems CartItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model User {
@@ -30,6 +34,7 @@ model User {
   email     String    @unique
   password  Password?
   username  String    @unique
+  carts     Cart[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }
@@ -41,4 +46,31 @@ model Password {
 
   user   User   @relation(fields: [userId], references: [id])
   userId String @unique
+}
+
+model CartItem {
+  id String @id @default(cuid())
+
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+
+  quantity Int @default(1)
+
+  cart   Cart   @relation(fields: [cartId], references: [id])
+  cartId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Cart {
+  id String @id @default(cuid())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  items CartItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
