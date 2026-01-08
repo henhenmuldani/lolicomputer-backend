@@ -28,6 +28,7 @@ serve({
   port,
   hostname: "0.0.0.0", // 🔥 PENTING
 });
+console.log("BOOTSTRAP SERVER");
 
 console.log(`Server running on port ${port}`);
 
@@ -316,4 +317,4 @@ app.post(
 //   return c.json({ message: "Products have been seeded" });
 // });
 
-export default app;
+// export default app;
