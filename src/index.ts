@@ -6,6 +6,7 @@ import { z } from "zod";
 import { hashPassword, verifyPassword } from "./libs/password.js";
 import { createToken } from "./libs/jwt.js";
 import { checkUserToken } from "./middlewares/check-user-token.js";
+import { serve } from "bun";
 
 type Bindings = {
   TOKEN: string;
@@ -20,6 +21,15 @@ type Variables = {
 export type HonoApp = { Bindings: Bindings; Variables: Variables };
 
 const app = new Hono<HonoApp>();
+
+const port = Number(process.env.PORT) || 3000;
+serve({
+  fetch: app.fetch,
+  port,
+  hostname: "0.0.0.0", // 🔥 PENTING
+});
+
+console.log(`Server running on port ${port}`);
 
 app.use("/*", cors());
 

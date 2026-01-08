@@ -24,7 +24,7 @@ RUN bun x prisma generate
 RUN bun x prisma migrate deploy
 
 # Local development
-# EXPOSE 3000
+EXPOSE 3000
 
 # Run the application
 CMD ["bun", "start"]
